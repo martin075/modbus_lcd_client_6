@@ -52,7 +52,11 @@ THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /* define baudrate of modbus */
+<<<<<<< HEAD
 //#define BAUD 38400L 
+=======
+//#define BAUD 38400L 
+>>>>>>> origin/master
 //#define BAUD 11200L 
 #define BAUD 9600L // see at Baud too - next lines
 /*
@@ -116,10 +120,17 @@ THE POSSIBILITY OF SUCH DAMAGE.
  * Change this value if you are using a different frequency and/or
  * different baudrate.
 */
+<<<<<<< HEAD
 //#define Baud 64 //38400@20e6Hz, Ubrr=Fosc/(8*baud)-1, 16000000/(8*9600)-1=207
 //#define Baud 177 //11200@16e6Hz
 #define Baud 207 // 9600@16e6Hz
 
+=======
+//#define Baud 64 //38400@20e6Hz, Ubrr=Fosc/(8*baud)-1, 16000000/(8*9600)-1=207
+//#define Baud 177 //11200@16e6Hz
+#define Baud 207 // 9600@16e6Hz
+
+>>>>>>> origin/master
 #elif defined(__AVR_ATtiny441__)
 #define UART_TRANSMIT_COMPLETE_INTERRUPT USART0_TX_vect
 #define UART_RECEIVE_INTERRUPT   USART0_RX_vect
