@@ -571,9 +571,11 @@ int main(void)
 	if((thermostat2*10)> (CurrentTemp4 + 50))
 		{ PORTD |= (1<<PD6);//set PD6 to 1
 		}
-	lcd_gotoxy( 11, 3);
-	sprintf( CharBuffer, "%i.%i",thermostat1,delay_read);
-	lcd_puts(CharBuffer);
+	//----------------------------------------------------for testing
+	//lcd_gotoxy( 11, 3);
+	//sprintf( CharBuffer, "%i.%i",thermostat1,delay_read);
+	//lcd_puts(CharBuffer);
+	//----------------------------------------------------
 		// end of loop--------------------
 		// enable interrupt
 		sei();
