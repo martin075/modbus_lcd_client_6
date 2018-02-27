@@ -3,7 +3,9 @@
 // fuses set for Atmega328P L-C6, H-DD
 // modbus implemented by using Max B. mbs38 at github code
 //--------------------------------------------------------
-// missing thermostat function
+// missing thermostat function, for range 0-90°C
+// write thermostat temperature
+// write delay between reading values , for range 0-100 sec
 //-----------------------------
 
 #include <stdio.h>
@@ -26,7 +28,12 @@
 
 #define MODE_altitude 7			// altitude correction for relative barometric pressure
 #define clientAddress 0x0A // slave address
-#define interval 1500	// interval*10ms,for example 1000*10ms = 10sec
+
+//--------------------
+#define adr_thermostat1	 	0x02
+#define adr_thermostat2	 	0x04		//adr in EEPROM - for MODBUS,word - int- 2Byte
+#define adr_delay_read		0x06
+//-------------------- 
 
 //modbus 
 uint8_t back_len0 = 0;
@@ -61,7 +68,7 @@ char printbuff[10];
 volatile uint8_t instate = 0;
 volatile uint8_t outstate = 0;
 volatile uint16_t inputRegisters[4];
-volatile uint16_t holdingRegisters[8]= {40,41,42,43,44,45,47,48}; // values for example
+volatile uint16_t holdingRegisters[11]= {40,41,42,43,44,45,47,48,24,28,15}; // values for example
 
 void timer0100us_start(void) {
 	TCCR0B|=(1<<CS01); //prescaler 8
@@ -100,8 +107,10 @@ void io_conf(void) {
 	//DDRD |= (1<<2)|(1<<5)|(1<<6)|(1<<7);
 	DDRD |= (1<<2);
 
-	DDRD = (1<<PD5) | (1<<PD6);	// for rele
-	PORTD = (1<<PD5) | (1<<PD6);
+	DDRD = (1<<PD5) | (1<<PD6);	// output for rele
+	//PORTD |= (1<<PD5) | (1<<PD6); //set log.1
+	PORTD &=~(1<<PD5);		// set log. 0
+	PORTD &=~(1<<PD6);		// set log. 0
 }
 
 
@@ -123,7 +132,7 @@ void modbusGet(void) {
 			break;
 			
 			case fcReadHoldingRegisters: {
-				modbusExchangeRegisters(holdingRegisters,0,8);
+				modbusExchangeRegisters(holdingRegisters,0,11);
 			}
 			break;
 			
@@ -139,7 +148,7 @@ void modbusGet(void) {
 			break;
 			
 			case fcPresetSingleRegister: {
-				modbusExchangeRegisters(holdingRegisters,0,8);
+				modbusExchangeRegisters(holdingRegisters,0,11);
 			}
 			break;
 			
@@ -150,7 +159,7 @@ void modbusGet(void) {
 			break;
 			
 			case fcPresetMultipleRegisters: {
-				modbusExchangeRegisters(holdingRegisters,0,8);
+				modbusExchangeRegisters(holdingRegisters,0,11);
 			}
 			break;
 			
@@ -167,8 +176,10 @@ int main(void)
 {
 	int desatiny,cele,j,press=20;
 	unsigned char i,chyba1=0,chyba2=0,chyba3=0,chyba4=0,chyba5=0,chyba6=0;
-       
-	   
+    int thermostat1,thermostat2,delay_read;
+	int thermostat1_eeprom,thermostat2_eeprom,delay_read_eeprom; //24dec18hex,28dec1C,6dec6hex
+	int interval;	// interval*10ms,for example 1000*10ms = 10sec	   
+
 	//DDRB |=(1<<PB3); //LED blink
 	//PORTB|=(1<<PB3);
 	// Port C initialization DS18b20 //
@@ -196,20 +207,64 @@ int main(void)
 	//Watchdog initialization.
 	//wdt_reset();
 	//wdt_enable(WDTO_8S); // for 5V supply,  At lower supply voltages, the times will increase 
-
-	lcd_init( LCD_DISP_ON);
-	 lcd_clrscr();
-	 _delay_ms(80);
 	
-	 lcd_gotoxy( 1, 0);
-	 lcd_puts_P( " modbus temp 0.1");
-	 _delay_ms(1200);
+
+	thermostat1_eeprom = eeprom_read_word((uint16_t*)adr_thermostat1);   
+
+	thermostat2_eeprom = eeprom_read_word((uint16_t*)adr_thermostat2);   
+
+	delay_read_eeprom = eeprom_read_word((uint16_t*)adr_delay_read);
+	
+
+	if((thermostat1_eeprom>0)&&(thermostat1_eeprom<90))
+		{
+		holdingRegisters[8] = thermostat1 = thermostat1_eeprom;
+		}
+		else 
+		{ 	thermostat1_eeprom=24;
+			eeprom_write_word((uint16_t*)adr_thermostat1,thermostat1_eeprom); // works
+		}
+
+	if((thermostat2_eeprom>0)&&(thermostat2_eeprom<90))
+		{
+		holdingRegisters[9] = thermostat2 = thermostat2_eeprom;
+		}
+		else 
+		{thermostat2_eeprom=28;
+		eeprom_write_word((uint16_t*)adr_thermostat2,thermostat2_eeprom); // works
+		}
+
+	if((delay_read_eeprom>0)&&(delay_read_eeprom<100))
+		{
+		holdingRegisters[10] = delay_read = delay_read_eeprom;
+		}
+		else 
+		{delay_read_eeprom=10;
+		eeprom_write_word((uint16_t*)adr_delay_read,delay_read_eeprom);
+		}
+
+	 lcd_init( LCD_DISP_ON);
+	 lcd_clrscr();
+	 //_delay_ms(80);
+	
+	 lcd_gotoxy( 0, 0);
+	 lcd_puts_P( " modbus temp 0.2\n");
+	 //lcd_gotoxy( 1, 1);
+	sprintf( CharBuffer, "%i,8N1\n",BAUD);
+	lcd_puts(CharBuffer);
+	sprintf( CharBuffer, "modbus adr:%X\n",clientAddress);
+	lcd_puts(CharBuffer);
+	sprintf( CharBuffer, "t1:%+i;t2:%+i",thermostat1,thermostat2);
+	lcd_puts(CharBuffer);
+	 _delay_ms(2000);
+	 //-------------------------------------
+	 lcd_clrscr();
 	 lcd_gotoxy( 2, 1);		//column , row
 	 lcd_puts_P( "kontrola snimacov");
 	 lcd_gotoxy( 3, 2);		//column , row
 	 lcd_puts_P( "DS18b20"); // msg0
-	 _delay_ms(500);
-	lcd_clrscr();
+	 _delay_ms(1000);
+	 lcd_clrscr();
 	//---------------------------------
 	lcd_gotoxy( 0, 0); // stlpec-riadok
 	lcd_puts_P( "S1:");
@@ -471,12 +526,51 @@ int main(void)
 		holdingRegisters[3]=CurrentTemp4;
 		holdingRegisters[4]=CurrentTemp5;
 		holdingRegisters[5]=CurrentTemp6;
-		holdingRegisters[6]= l/100; //hPa
+		holdingRegisters[6]= l/10; //10*Pa
 		holdingRegisters[7]= d;
+
+		thermostat1 = holdingRegisters[8];	// from master 
+		thermostat2 = holdingRegisters[9];
+		delay_read = holdingRegisters[10];	// from master in seconds
+
+	if((delay_read > 1) && (delay_read <100))
+		{ interval = delay_read*100;
+		//
+		if(delay_read_eeprom != delay_read)
+			{
+			cli();
+			eeprom_write_word((uint16_t*)adr_delay_read,delay_read);
+			sei();
+			delay_read_eeprom = delay_read;
+			}
+			else delay_read_eeprom = delay_read;
+		}
+		else interval = 15;
+
+	if((thermostat1>0)&&(thermostat1<90))
+		{
+		if((thermostat1*10)> (CurrentTemp2 + 50))
+			{ PORTD |= (1<<PD5);//set PD5 to 1
+			}
+		if(thermostat1 != thermostat1_eeprom)
+			{cli();	
+			eeprom_write_word((uint16_t*)adr_thermostat1,thermostat1); // works
+			sei();
+			thermostat1_eeprom = thermostat1;
+			}
+		}
+		else thermostat1 = thermostat1_eeprom;
+
+	if((thermostat2*10)> (CurrentTemp4 + 50))
+		{ PORTD |= (1<<PD6);//set PD6 to 1
+		}
+	lcd_gotoxy( 11, 3);
+	sprintf( CharBuffer, "%i.%i",thermostat1,delay_read);
+	lcd_puts(CharBuffer);
 		// end of loop--------------------
 		// enable interrupt
 		sei();
-	// loop for communication, and delay between reading temperatures
+			// loop for communication, and delay between reading temperatures
 		for(j=0;j<interval;j++)
 			{
 			modbusGet();
