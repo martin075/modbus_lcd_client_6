@@ -3,9 +3,10 @@
 // fuses set for Atmega328P L-C6, H-DD
 // modbus implemented by using Max B. mbs38 at github code
 //--------------------------------------------------------
-// missing thermostat function, for range 0-90°C
-// write thermostat temperature
+// thermostat function, for S3,S4, for range 0-90°C
+// write thermostat temperature, 
 // write delay between reading values , for range 0-100 sec
+// correction for relative atmospheric press 0 - 100 hPa
 //-----------------------------
 
 #include <stdio.h>
@@ -27,11 +28,11 @@
 #include "yaMBSiavr.h"
 
 //#define MODE_altitude 7			// altitude correction for relative barometric pressure
-#define clientAddress 0x0A // slave address
+#define clientAddress 0x0A 			// slave address
 
 //--------------------
 #define adr_thermostat1	 	0x02
-#define adr_thermostat2	 	0x04		//adr in EEPROM - for MODBUS,word - int- 2Byte
+#define adr_thermostat2	 	0x04		//adr in EEPROM - for MODBUS,word 
 #define adr_delay_read		0x06
 //-------------------- 
 
@@ -61,7 +62,6 @@ uint8_t Device1Presence=1,Device2Presence=1,Device3Presence=1,Device4Presence=1,
 int32_t gPressCorr=0;
 long l;
 double d;
-//float d; // in gcc float and double has the same 4B
 char printbuff[10];
 
 //------modbus
@@ -69,7 +69,7 @@ char printbuff[10];
 volatile uint8_t instate = 0;
 volatile uint8_t outstate = 0;
 volatile uint16_t inputRegisters[4];
-volatile uint16_t holdingRegisters[12]= {40,41,42,43,44,45,47,48,24,28,15,0}; // values for example
+volatile uint16_t holdingRegisters[14]= {40,41,42,43,44,45,47,48,0,0,29,28,10,0}; // default values for example
 
 void timer0100us_start(void) {
 	TCCR0B|=(1<<CS01); //prescaler 8
@@ -98,20 +98,18 @@ uint8_t ReadIns(void) {
 
 void io_conf(void) { 
 	/*
-	 Outputs: PB2,PB1,PB0,PD5-rele,PD6-rele,PD7
-	 Inputs: PC0, PC1, PC2, PC3, PC4, PC6, PD4, PD3
+	 for RS485 driver
 	*/
 	DDRD=0x00;
-	
 	PORTD=0x00;
+	//	DDRD &= ~(1<<0);
+	//	DDRD &= ~(1<<1);
+	//	PORTD &= ~(1<<1);
+	//	PORTD &= ~(1<<2);
 	PORTD|=(1<<0);
-	//DDRD |= (1<<2)|(1<<5)|(1<<6)|(1<<7);
+			//DDRD |= (1<<2)|(1<<5)|(1<<6)|(1<<7);
 	DDRD |= (1<<2);
 
-	DDRD = (1<<PD5) | (1<<PD6);	// output for rele
-	//PORTD |= (1<<PD5) | (1<<PD6); //set log.1
-	PORTD &=~(1<<PD5);		// set log. 0
-	PORTD &=~(1<<PD6);		// set log. 0
 }
 
 
@@ -133,7 +131,7 @@ void modbusGet(void) {
 			break;
 			
 			case fcReadHoldingRegisters: {
-				modbusExchangeRegisters(holdingRegisters,0,12);
+				modbusExchangeRegisters(holdingRegisters,0,14);
 			}
 			break;
 			
@@ -149,7 +147,7 @@ void modbusGet(void) {
 			break;
 			
 			case fcPresetSingleRegister: {
-				modbusExchangeRegisters(holdingRegisters,0,12);
+				modbusExchangeRegisters(holdingRegisters,10,14); // only addr 10 and higher
 			}
 			break;
 			
@@ -160,7 +158,7 @@ void modbusGet(void) {
 			break;
 			
 			case fcPresetMultipleRegisters: {
-				modbusExchangeRegisters(holdingRegisters,0,12);
+				modbusExchangeRegisters(holdingRegisters,10,14);	// only addr 10 and higher
 			}
 			break;
 			
@@ -179,12 +177,12 @@ int main(void)
 	unsigned char i,chyba1=0,chyba2=0,chyba3=0,chyba4=0,chyba5=0,chyba6=0;
     int thermostat1,thermostat2,delay_read,relative_corr;
 	int thermostat1_eeprom,thermostat2_eeprom,delay_read_eeprom; //24dec18hex,28dec1C,6dec6hex
-	int interval;	// interval*10ms,for example 1000*10ms = 10sec	   
+	int interval,therm1=0,therm2=0;	// interval*10ms,for example 1000*10ms = 10sec	   
 
 	//DDRB |=(1<<PB3); //LED blink
 	//PORTB|=(1<<PB3);
 	// Port C initialization DS18b20 //
-	DDRC &= ~(1 << PC0);   
+	DDRC &= ~(1 << PC0);   // input
     PORTC &= ~(1 << PC0);   
 	DDRC &= ~(1 << PC1);   
     PORTC &= ~(1 << PC1);   
@@ -195,13 +193,28 @@ int main(void)
 	DDRD &= ~(1 << PD3);   
     PORTD &= ~(1 << PD3);   
 	DDRD &= ~(1 << PD4);   
-    PORTD &= ~(1 << PD4);   
+    PORTD &= ~(1 << PD4);  
+	
+
+		//DDRD |= (1<<PD5) | (1<<PD6);	// output for rele
+		//PORTD |= (1<<PD5) | (1<<PD6); //set log.1
+		//PORTD &=~(1<<PD5);		// set log. 0
+		//PORTD &=~(1<<PD6);		// set log. 0
+		//PORTD |= (1 << PD6) – zápis log. 1 na pin 6 portu D
+		//PORTD &= ~(1 << PD6) – zápis log.0 na pin 6 portu D 
 	//modbus------------------------------------------------------
 	io_conf();	
 	modbusSetAddress(clientAddress); // setting client address
 	modbusInit();
 	//wdt_enable(7);
 	timer0100us_start();
+	//------------------ for rele
+	DDRD |=(1 << PD5);   // output
+    //PORTD &= ~(1 << PD5);
+	PORTD |= (1<<PD5);
+	DDRD |=(1 << PD6);   
+    //PORTD &= ~(1 << PD6);
+	PORTD |= (1<<PD6);
 	//---------------------------------------------------------
 	//deny interrupt
 	cli(); 
@@ -219,7 +232,7 @@ int main(void)
 
 	if((thermostat1_eeprom>0)&&(thermostat1_eeprom<90))
 		{
-		holdingRegisters[8] = thermostat1 = thermostat1_eeprom;
+		holdingRegisters[10] = thermostat1 = thermostat1_eeprom;
 		}
 		else 
 		{ 	thermostat1_eeprom=24;
@@ -228,7 +241,7 @@ int main(void)
 
 	if((thermostat2_eeprom>0)&&(thermostat2_eeprom<90))
 		{
-		holdingRegisters[9] = thermostat2 = thermostat2_eeprom;
+		holdingRegisters[11] = thermostat2 = thermostat2_eeprom;
 		}
 		else 
 		{thermostat2_eeprom=28;
@@ -237,7 +250,7 @@ int main(void)
 
 	if((delay_read_eeprom>0)&&(delay_read_eeprom<100))
 		{
-		holdingRegisters[10] = delay_read = delay_read_eeprom;
+		holdingRegisters[12] = delay_read = delay_read_eeprom;
 		}
 		else 
 		{delay_read_eeprom=10;
@@ -529,11 +542,16 @@ int main(void)
 		holdingRegisters[5]=CurrentTemp6;
 		holdingRegisters[6]= l/10; //10*Pa
 		holdingRegisters[7]= d;
+		holdingRegisters[8]=therm1;
+		holdingRegisters[9]=therm2;
+		//holdingRegisters[8]=DDRD;	//for testing
+		//holdingRegisters[9]=PORTD;
 
-		thermostat1 = holdingRegisters[8];	// from master 
-		thermostat2 = holdingRegisters[9];
-		delay_read = holdingRegisters[10];	// from master in seconds
-		relative_corr = holdingRegisters[11];
+		thermostat1 = holdingRegisters[10];	// from master 
+		thermostat2 = holdingRegisters[11];
+		delay_read = holdingRegisters[12];	// from master in seconds
+		relative_corr = holdingRegisters[13];
+		
 
 	if((delay_read > 1) && (delay_read <200))
 		{ interval = delay_read*100;
@@ -547,12 +565,14 @@ int main(void)
 			}
 			else delay_read_eeprom = delay_read;
 		}
-		else interval = 15;
+		else interval = 10;
 
+		// testing range, not ended
 	if((thermostat1>0)&&(thermostat1<90))
 		{
-		if((thermostat1*10)> (CurrentTemp2 + 50))
-			{ PORTD |= (1<<PD5);//set PD5 to 1
+		if((thermostat1*10)> (CurrentTemp2 + 5))
+			{ 
+			thermostat1=thermostat1;
 			}
 		if(thermostat1 != thermostat1_eeprom)
 			{cli();	
@@ -561,16 +581,34 @@ int main(void)
 			thermostat1_eeprom = thermostat1;
 			}
 		}
-		else thermostat1 = thermostat1_eeprom;
+		else {thermostat1 = thermostat1_eeprom;
+			}
+	
+	sei();
 
 	if((relative_corr>0) && (relative_corr<100))
 		{gPressCorr = relative_corr;
 		}
 		else gPressCorr = 0;
+	//---------------------------------------thermostat section
+	if( (CurrentTemp3) > (thermostat1*10) ){
+		 PORTD  &= ~(1<<PD5);	//set PD5 
+		therm1=1;
+		}else {	
+				PORTD |= (1<<PD5);
+				therm1=0;	}
 
-	if((thermostat2*10)> (CurrentTemp4 + 50))
-		{ PORTD |= (1<<PD6);//set PD6 to 1
-		}
+	if( (CurrentTemp4) > (thermostat2*10) ){ 
+		PORTD &= ~(1<<PD6);	//set PD6 
+		therm2=1;
+		}else {	
+				PORTD |= (1<<PD6);
+				therm2=0;	}
+
+	//DDRD |= (1<<PD5) | (1<<PD6);	// output for rele
+	//PORTD |= (1<<PD5) | (1<<PD6); //set log.1
+	//PORTD &= ~(1<<PD5);		// set log. 0
+	//PORTD &= ~(1<<PD6);		// set log. 0
 	//----------------------------------------------------for testing
 	//lcd_gotoxy( 11, 3);
 	//sprintf( CharBuffer, "%i.%i",thermostat1,delay_read);
@@ -578,7 +616,7 @@ int main(void)
 	//----------------------------------------------------
 		// end of loop--------------------
 		// enable interrupt
-		sei();
+		
 			// loop for communication, and delay between reading temperatures
 		for(j=0;j<interval;j++)
 			{
