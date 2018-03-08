@@ -478,7 +478,7 @@ int main(void)
 		lcd_putc(0); // print user character on LCD
 			
 		//_delay_ms(100);
-	//----------------------------------------------------			
+	 //----------------------------------------------------			
 		if(chyba5==0)
 		{
 		CurrentTemp5 = ds18b20_gettemp(&PORTD,PD3);
@@ -490,8 +490,8 @@ int main(void)
 		lcd_puts(CharBuffer);
 		}
 		lcd_gotoxy( 19, 2);
-		lcd_putc(0); // print user character on LCD
-	//----------------------------------------------------			
+	 	lcd_putc(0); // print user character on LCD
+	 //----------------------------------------------------			
 		if(chyba6==0)
 		{
 		CurrentTemp6 = ds18b20_gettemp(&PORTD,PD4);
@@ -505,9 +505,9 @@ int main(void)
 		lcd_gotoxy( 19, 3);
 		lcd_putc(0); // print user character on LCD	
 		//_delay_ms(100);
-	//----------------------------------------------------			
+	 //----------------------------------------------------			
 		
-	//get temperature BMP085
+	 //get temperature BMP085
 		d = bmp085_gettemperature();
 		cele = d/10;
 		desatiny = abs(d) - abs(cele*10);
@@ -553,7 +553,7 @@ int main(void)
 		relative_corr = holdingRegisters[13];
 		
 
-	if((delay_read > 1) && (delay_read <200))
+	 if((delay_read > 1) && (delay_read <200))
 		{ interval = delay_read*100;
 		//
 		if(delay_read_eeprom != delay_read)
@@ -567,53 +567,79 @@ int main(void)
 		}
 		else interval = 10;
 
-		// testing range, not ended
-	if((thermostat1>0)&&(thermostat1<90))
+		//--testing range, works, --------------
+	 if((thermostat1>0)&&(thermostat1<90))
 		{
-		if((thermostat1*10)> (CurrentTemp2 + 5))
+		 if((CurrentTemp3 ) > (thermostat1*10))
 			{ 
-			thermostat1=thermostat1;
+			 PORTD  &= ~(1<<PD5);	//set PD5 
+			 therm1=1;
 			}
-		if(thermostat1 != thermostat1_eeprom)
+		 if((CurrentTemp3 + 5) < (thermostat1*10))
+				{ PORTD |= (1<<PD5);
+				  therm1=0;	
+				}	
+		 if(thermostat1 != thermostat1_eeprom)
 			{cli();	
-			eeprom_write_word((uint16_t*)adr_thermostat1,thermostat1); // works
-			sei();
-			thermostat1_eeprom = thermostat1;
+			 eeprom_write_word((uint16_t*)adr_thermostat1,thermostat1); // works
+			 sei();
+			 thermostat1_eeprom = thermostat1;
 			}
 		}
-		else {thermostat1 = thermostat1_eeprom;
+		 else {thermostat1 = thermostat1_eeprom;
+			  }
+			
+	 if((thermostat2>0)&&(thermostat2<90))
+		{
+		 if((CurrentTemp4 ) > (thermostat2*10))
+			{ 
+			 PORTD  &= ~(1<<PD6);	//set PD6 
+			 therm2=1;
 			}
+		 if((CurrentTemp4 + 5) < (thermostat2*10))	 
+				{ PORTD |= (1<<PD6);
+				  therm2=0;	
+				}	
+		 if(thermostat2 != thermostat2_eeprom)
+			{cli();	
+			 eeprom_write_word((uint16_t*)adr_thermostat2,thermostat2); // works
+			 sei();
+			 thermostat2_eeprom = thermostat2;
+			}
+		}
+		 else {thermostat2 = thermostat2_eeprom;
+			 }
 	
-	sei();
+	 sei();
 
-	if((relative_corr>0) && (relative_corr<100))
+	 if((relative_corr>0) && (relative_corr<100))
 		{gPressCorr = relative_corr;
 		}
 		else gPressCorr = 0;
-	//---------------------------------------thermostat section
-	if( (CurrentTemp3) > (thermostat1*10) ){
+	 //---------------------------------------thermostat section
+	 /*if( (CurrentTemp3) > (thermostat1*10) ){
 		 PORTD  &= ~(1<<PD5);	//set PD5 
 		therm1=1;
 		}else {	
 				PORTD |= (1<<PD5);
 				therm1=0;	}
 
-	if( (CurrentTemp4) > (thermostat2*10) ){ 
+	 if( (CurrentTemp4) > (thermostat2*10) ){ 
 		PORTD &= ~(1<<PD6);	//set PD6 
 		therm2=1;
 		}else {	
 				PORTD |= (1<<PD6);
 				therm2=0;	}
-
-	//DDRD |= (1<<PD5) | (1<<PD6);	// output for rele
-	//PORTD |= (1<<PD5) | (1<<PD6); //set log.1
-	//PORTD &= ~(1<<PD5);		// set log. 0
-	//PORTD &= ~(1<<PD6);		// set log. 0
-	//----------------------------------------------------for testing
-	//lcd_gotoxy( 11, 3);
-	//sprintf( CharBuffer, "%i.%i",thermostat1,delay_read);
-	//lcd_puts(CharBuffer);
-	//----------------------------------------------------
+     */
+		//DDRD |= (1<<PD5) | (1<<PD6);	// output for rele
+		//PORTD |= (1<<PD5) | (1<<PD6); //set log.1
+		//PORTD &= ~(1<<PD5);		// set log. 0
+		//PORTD &= ~(1<<PD6);		// set log. 0
+		//----------------------------------------------------for testing
+		//lcd_gotoxy( 11, 3);
+		//sprintf( CharBuffer, "%i.%i",thermostat1,delay_read);
+		//lcd_puts(CharBuffer);
+		//----------------------------------------------------
 		// end of loop--------------------
 		// enable interrupt
 		
