@@ -575,7 +575,7 @@ int main(void)
 			 PORTD  &= ~(1<<PD5);	//set PD5 
 			 therm1=1;
 			}
-		 if((CurrentTemp3 + 5) < (thermostat1*10))
+		 if((CurrentTemp3 + 8) < (thermostat1*10))
 				{ PORTD |= (1<<PD5);
 				  therm1=0;	
 				}	
@@ -596,7 +596,7 @@ int main(void)
 			 PORTD  &= ~(1<<PD6);	//set PD6 
 			 therm2=1;
 			}
-		 if((CurrentTemp4 + 5) < (thermostat2*10))	 
+		 if((CurrentTemp4 + 8) < (thermostat2*10))	 
 				{ PORTD |= (1<<PD6);
 				  therm2=0;	
 				}	

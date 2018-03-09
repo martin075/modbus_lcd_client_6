@@ -20748,7 +20748,7 @@ Comments, suggestions and bug reports please send to: &lt;b&gt;&lt;a href="mailt
 <part name="C10" library="rcl" deviceset="C-EU" device="C025_050-024X070" value="100nF"/>
 <part name="C9" library="rcl" deviceset="C-EU" device="C025_050-024X070" value="100nF"/>
 <part name="C8" library="rcl" deviceset="C-EU" device="C0805" value="100nF"/>
-<part name="Q1" library="special" deviceset="XTAL" device="" value="8MHz"/>
+<part name="Q1" library="special" deviceset="XTAL" device="" value="16MHz"/>
 <part name="U$1" library="diy-modules" deviceset="RELAY-2-SRD" device=""/>
 <part name="GND9" library="supply1" deviceset="GND" device=""/>
 <part name="GND13" library="supply1" deviceset="GND" device=""/>
