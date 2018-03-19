@@ -20780,6 +20780,8 @@ Comments, suggestions and bug reports please send to: &lt;b&gt;&lt;a href="mailt
 <part name="U$2" library="diy-modules" deviceset="RS485-TTL-CONVERTER" device=""/>
 <part name="GND2" library="supply1" deviceset="GND" device=""/>
 <part name="P+10" library="supply1" deviceset="VCC" device=""/>
+<part name="C2" library="resistor" deviceset="C-EU" device="025-024X044" value="18p"/>
+<part name="GND3" library="supply1" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -20856,6 +20858,8 @@ Comments, suggestions and bug reports please send to: &lt;b&gt;&lt;a href="mailt
 <instance part="U$2" gate="G$1" x="25.4" y="45.72" rot="R180"/>
 <instance part="GND2" gate="1" x="-2.54" y="58.42" rot="R180"/>
 <instance part="P+10" gate="VCC" x="-2.54" y="38.1" rot="R180"/>
+<instance part="C2" gate="G$1" x="15.24" y="116.84" rot="R270"/>
+<instance part="GND3" gate="1" x="10.16" y="121.92" rot="R180"/>
 </instances>
 <busses>
 </busses>
@@ -21034,6 +21038,11 @@ Comments, suggestions and bug reports please send to: &lt;b&gt;&lt;a href="mailt
 <wire x1="2.54" y1="50.8" x2="-2.54" y2="50.8" width="0.1524" layer="91"/>
 <pinref part="GND2" gate="1" pin="GND"/>
 <wire x1="-2.54" y1="50.8" x2="-2.54" y2="55.88" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="C2" gate="G$1" pin="2"/>
+<pinref part="GND3" gate="1" pin="GND"/>
+<wire x1="10.16" y1="119.38" x2="10.16" y2="116.84" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$5" class="0">
@@ -21218,12 +21227,14 @@ Comments, suggestions and bug reports please send to: &lt;b&gt;&lt;a href="mailt
 <junction x="25.4" y="106.68"/>
 <wire x1="25.4" y1="106.68" x2="17.78" y2="106.68" width="0.1524" layer="91"/>
 </segment>
-</net>
-<net name="N$32" class="0">
 <segment>
+<wire x1="25.4" y1="116.84" x2="17.78" y2="116.84" width="0.1524" layer="91"/>
+<pinref part="C2" gate="G$1" pin="1"/>
 <pinref part="IC5" gate="1" pin="PB6(XTAL1/TOSC1/PCINT6)"/>
 <pinref part="Q1" gate="G$1" pin="2"/>
-<wire x1="35.56" y1="111.76" x2="25.4" y2="116.84" width="0.1524" layer="91"/>
+<wire x1="35.56" y1="111.76" x2="35.56" y2="116.84" width="0.1524" layer="91"/>
+<wire x1="35.56" y1="116.84" x2="25.4" y2="116.84" width="0.1524" layer="91"/>
+<junction x="25.4" y="116.84"/>
 </segment>
 </net>
 <net name="N$33" class="0">
