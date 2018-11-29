@@ -1,6 +1,6 @@
 # modbus_lcd_client_6
 modbus client with LCD HD44780, 6 x DS18B20, RS485, BMP180, ATmega328P, 2x relays<br /> 
-0-7 address values, 8-13 settings<br />
+0-7 address values, 8-13 settings<br /> for settings values - you need to use address +10 (for example, I need to change add num 12 to value 17, I need to send add 22 with value 17)
 ### modbus address 
 		0-5 temperature sensors - DS18B20 
 		6 - atmospheric pressure - BMP180 (relative or absolute) 
