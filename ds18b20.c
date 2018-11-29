@@ -410,18 +410,18 @@ int16_t ds18b20_gettemp(volatile unsigned char *Port, unsigned char Pin)
 	
 	if(sign == 0)
   	{
-	teplota = (temperature_l & 0xF0) >> 4 | (temperature_h & 0x0F) << 4 ;   // signed teplota
-	desatiny = (temperature_l & 0x0F) * 0.625;
-  	retd = 10 * teplota;  
-	retd = retd + desatiny;
+	teplota = ( (temperature_l & 0xF0) >> 4 | (temperature_h & 0x0F) << 4 )*10;   // signed teplota
+	desatiny = ((temperature_l & 0x0F) * 0.0625)*10;
+  	  
+	retd = teplota + desatiny;
 	}
  else
     {
 	temperature_l =~ temperature_l;
 	temperature_h =~ temperature_h;
-    teplota = (temperature_l & 0xF0) >> 4 | (temperature_h & 0x0F) << 4 ;   // signed teplota
-    desatiny = ((temperature_l + 1) & 0x0F) * 0.625;
-    retd = (teplota*10+desatiny)*(-1);
+    teplota = ( (temperature_l & 0xF0) >> 4 | (temperature_h & 0x0F) << 4 )*10 ;   // signed teplota
+    desatiny = ( ((temperature_l + 1) & 0x0F) * 0.0625 )*10;
+    retd = (teplota + desatiny)*(-1);
 	}
 	sei();
 	
