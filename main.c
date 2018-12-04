@@ -1,9 +1,9 @@
-// DS18B20 - +-0,5°C
-// BMP180 - +-1°C, -4 +2 hPa
+// DS18B20 - +-0,5Â°C
+// BMP180 - +-1Â°C, -4 +2 hPa
 // fuses set for Atmega328P L-C6, H-DD
 // modbus implemented by using Max B. mbs38 at github code
 //--------------------------------------------------------
-// thermostat function, for S3,S4, for range 0-90°C
+// thermostat function, for S3,S4, for range 0-90Â°C
 // write thermostat temperature, 
 // write delay between reading values , for range 0-100 sec
 // correction for relative atmospheric press 0 - 100 hPa
@@ -200,8 +200,8 @@ int main(void)
 		//PORTD |= (1<<PD5) | (1<<PD6); //set log.1
 		//PORTD &=~(1<<PD5);		// set log. 0
 		//PORTD &=~(1<<PD6);		// set log. 0
-		//PORTD |= (1 << PD6) – zápis log. 1 na pin 6 portu D
-		//PORTD &= ~(1 << PD6) – zápis log.0 na pin 6 portu D 
+		//PORTD |= (1 << PD6) â€“ zÃ¡pis log. 1 na pin 6 portu D
+		//PORTD &= ~(1 << PD6) â€“ zÃ¡pis log.0 na pin 6 portu D 
 	//modbus------------------------------------------------------
 	io_conf();	
 	modbusSetAddress(clientAddress); // setting client address
@@ -426,7 +426,8 @@ int main(void)
 		cele = CurrentTemp1/10;
 		desatiny = ( abs(CurrentTemp1) - abs((cele*10)) );
 		lcd_gotoxy( 3, 0);
-		sprintf( CharBuffer, "%+i.%i\n",cele,desatiny);
+		if(CurrentTemp1 < 0) sprintf( CharBuffer, "-%i.%i\n",cele,desatiny);
+			else sprintf( CharBuffer, "+%i.%i\n",cele,desatiny);
 		lcd_puts(CharBuffer);
 		}
 		lcd_gotoxy( 9, 0);
@@ -440,8 +441,9 @@ int main(void)
 		CurrentTemp2 = ds18b20_gettemp(&PORTC,PC1);
 		cele = CurrentTemp2/10;
 		desatiny = (abs(CurrentTemp2) - abs((cele*10)) );
-		sprintf( CharBuffer, "%+i.%i\n",cele,desatiny);
-		//sprintf( CharBuffer, "%i \xC6\n",CurrentTemp2); // xC6, xC5 arrows
+		if(CurrentTemp2 < 0) sprintf( CharBuffer, "%+i.%i\n",cele,desatiny);
+			else sprintf( CharBuffer, "+%i.%i\n",cele,desatiny);
+			//sprintf( CharBuffer, "%i \xC6\n",CurrentTemp2); // xC6, xC5 arrows
 		lcd_gotoxy( 3, 1);
 		lcd_puts(CharBuffer);
 		}
@@ -456,7 +458,8 @@ int main(void)
 		cele = CurrentTemp3/10;
 		desatiny = (abs(CurrentTemp3) - abs((cele*10)) );
 		
-		sprintf( CharBuffer, "%+i.%i\n",cele,desatiny);
+		if(CurrentTemp3 < 0) sprintf( CharBuffer, "%+i.%i\n",cele,desatiny);
+			else sprintf( CharBuffer, "+%i.%i\n",cele,desatiny);
 		lcd_gotoxy( 3, 2);
 		lcd_puts(CharBuffer);
 		}
@@ -470,7 +473,8 @@ int main(void)
 		CurrentTemp4 = ds18b20_gettemp(&PORTC,PC3);
 		cele = CurrentTemp4/10;
 		desatiny = (abs(CurrentTemp4) - abs((cele*10)) );
-		sprintf( CharBuffer, "%+i.%i\n",cele,desatiny);
+		if(CurrentTemp4 < 0) sprintf( CharBuffer, "%+i.%i\n",cele,desatiny);
+			else sprintf( CharBuffer, "+%i.%i\n",cele,desatiny);
 		lcd_gotoxy( 3, 3);
 		lcd_puts(CharBuffer);
 		}
@@ -484,7 +488,8 @@ int main(void)
 		CurrentTemp5 = ds18b20_gettemp(&PORTD,PD3);
 		cele = CurrentTemp5/10;
 		desatiny = (abs(CurrentTemp5) - abs((cele*10)) );
-		sprintf( CharBuffer, "%+i.%i",cele,desatiny);
+		if(CurrentTemp5 < 0) sprintf( CharBuffer, "%+i.%i",cele,desatiny);
+			else sprintf( CharBuffer, "+%i.%i\n",cele,desatiny);
 		//sprintf( CharBuffer, "%i\xC6\n",CurrentTemp4);
 		lcd_gotoxy( 14, 2);
 		lcd_puts(CharBuffer);
@@ -497,7 +502,8 @@ int main(void)
 		CurrentTemp6 = ds18b20_gettemp(&PORTD,PD4);
 		cele = CurrentTemp6/10;
 		desatiny = (abs(CurrentTemp6) - abs((cele*10)) );
-		sprintf( CharBuffer, "%+i.%i",cele,desatiny);
+		if(CurrentTemp6 < 0) sprintf( CharBuffer, "%+i.%i",cele,desatiny);
+			else sprintf( CharBuffer, "+%i.%i\n",cele,desatiny);
 		//sprintf( CharBuffer, "%i\xC6\n",CurrentTemp4);
 		lcd_gotoxy( 14, 3);
 		lcd_puts(CharBuffer);
@@ -507,7 +513,7 @@ int main(void)
 		//_delay_ms(100);
 	 //----------------------------------------------------			
 		
-	 //get temperature BMP085
+	 //get temperature BMP085 indoor
 		d = bmp085_gettemperature();
 		cele = d/10;
 		desatiny = abs(d) - abs(cele*10);
